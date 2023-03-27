@@ -1,10 +1,12 @@
 #include <SysBase.h>
-#include <helper.h>
 #include <eigen3/Eigen/Eigen>
+#include <iostream>
+#include <boost/format.hpp>
 
-#include <matplot/matplot.h>
+#include "matplotlibcpp.h"
 
 using namespace Eigen;
+namespace plt = matplotlibcpp;
 
 VectorXd System::_meas_noise()
 {
@@ -32,15 +34,14 @@ void System::_set_init_states(VectorXd &x0)
     return;
 }
 
-void System::simulate(uint32_t n_steps,
-                      std::function<VectorXd(VectorXd &, VectorXd &)> policy,
-                      std::vector<VectorXd> &ref_traj)
+void System::simulate(uint32_t n_steps, ControlLaw policy,
+                      const VectorSeq &ref_traj)
 {
     VectorXd u_k, x_next, y_next;
 
-    for (int k = 1; k < n_steps; k++)
+    for (int k = 0; k < n_steps; k++)
     {
-        u_k = policy(this->x.back(), ref_traj[k]);
+        u_k = policy(this->x.back(), ref_traj.at(k));
         x_next = _f(this->x.back(), u_k);
         y_next = _output(x_next, u_k);
 
@@ -52,35 +53,41 @@ void System::simulate(uint32_t n_steps,
     return;
 }
 
-void System::plot_output(std::string xlabel, std::string ylabel)
+double System::get_Ts()
 {
-    std::vector<double> x, y;
+    return this->Ts;
+}
 
-    // plot every state as a separate line
-    for (int i = 0; i < this->n_outputs; i++)
+void System::plot_output()
+{
+    std::vector<double> t, y;
+
+    for (int k = 0; k < this->n_outputs; k++)
     {
-        x.clear();
+        t.clear();
         y.clear();
 
-        for (int k = 0; k < this->y.size(); k++)
+        for (int i = 1; i < this->y.size(); i++)
         {
-            x.push_back(k * this->Ts);
-            y.push_back(this->y[k](i));
+            t.push_back((i - 1) * Ts);
+            y.push_back(this->y[i](k));
         }
 
-        matplot::plot(x, y, "-o")->line_width(2);
-        matplot::hold(matplot::on);
+        std::string label = (boost::format("$y_%1%$") % k).str();
+
+        plt::plot(t, y,
+                  {{"label", label},
+                   {"linewidth", "1.2"},
+                   {"drawstyle", "steps-mid"}});
     }
-    
-    matplot::title("Output");
-    matplot::xlabel(xlabel);
-    matplot::ylabel(ylabel);
-    matplot::legend();
-    matplot::show();
+
+    plt::xlabel("Time (s)");
+    plt::title("Output");
+    plt::legend({{"loc", "best"}, {"fontsize", "medium"}});
+    plt::show();
 
     return;
 }
-
 
 void LinearSystem::_build_system_model(double Ts, bool isNoisy,
                                        const VectorXd &noise_cov)

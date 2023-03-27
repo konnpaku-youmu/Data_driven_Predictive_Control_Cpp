@@ -37,23 +37,23 @@ private:
 public:
     InvertedPendulum(double Ts, bool isNoisy, VectorXd &x0)
     {
-        A << 0, 0, 1, 0,
-            0, 0, 0, 1,
-            0, a_21, a_22, 0,
-            0, a_31, a_32, 0;
+        A << 0,    0,    1,  0,
+             0,    0,    0,  1,
+             0, a_21, a_22,  0,
+             0, a_31, a_32,  0;
 
         B << 0,
-            0,
-            b_2,
-            b_3;
+             0,
+             b_2,
+             b_3;
 
         C << 1, 0, 0, 0,
-            0, 1, 0, 0;
+             0, 1, 0, 0;
 
         D << 0,
-            0;
+             0;
 
-        noise_cov << 4e-6, 1e-4;
+        noise_cov << 9e-6, 1e-4;
 
         this->_build_system_model(Ts, isNoisy, noise_cov);
         this->_set_init_states(x0);

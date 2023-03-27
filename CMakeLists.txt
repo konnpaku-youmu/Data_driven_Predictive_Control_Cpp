@@ -10,7 +10,7 @@ find_package(CUDA)
 find_package(casadi REQUIRED)
 find_package(Boost 1.8 REQUIRED)
 find_package(OpenMP QUIET)
-find_package(Matplot++ REQUIRED)
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 
 if(CUDA_FOUND)
   add_compile_definitions(WITH_CUDA)
@@ -73,5 +73,7 @@ target_link_libraries(${PROJECT_NAME}
   ${PROJECT_LIBS}
   Qt${QT_VERSION_MAJOR}::Widgets 
   Qt${QT_VERSION_MAJOR}::PrintSupport
-  Matplot++::matplot
+  Python3::Python
+  Python3::Module
+  Python3::NumPy
 )

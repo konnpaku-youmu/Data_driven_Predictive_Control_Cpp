@@ -5,6 +5,7 @@
 #include <functional>
 #include <eigen3/Eigen/Eigen>
 #include <casadi/casadi.hpp>
+#include "helper.h"
 
 using namespace Eigen;
 
@@ -13,9 +14,9 @@ class System
 protected:
     double Ts;
 
-    std::vector<VectorXd> x;
-    std::vector<VectorXd> y;
-    std::vector<VectorXd> u;
+    VectorSeq x;
+    VectorSeq y;
+    VectorSeq u;
 
     uint8_t n_states;
     uint8_t n_inputs;
@@ -33,12 +34,14 @@ protected:
     virtual VectorXd _f(VectorXd &, VectorXd &) = 0;
 
     virtual VectorXd _output(VectorXd &, VectorXd &) = 0;
-    
+
 public:
-    void simulate(uint32_t n_steps,
-                  std::function<VectorXd(VectorXd &, VectorXd &)> policy, std::vector<VectorXd> &ref_traj);
-    
-    void plot_output(std::string xlabel, std::string ylabel);
+    void simulate(uint32_t n_steps, ControlLaw policy,
+                  const VectorSeq &ref_traj);
+
+    double get_Ts();
+
+    void plot_output();
 };
 
 class LinearSystem : public System
