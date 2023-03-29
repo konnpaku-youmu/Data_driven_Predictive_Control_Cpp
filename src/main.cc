@@ -24,7 +24,7 @@ int main()
 
     std::vector<uint8_t> id_output;
     id_output.push_back(0);
-    std::vector<Vector2d> limits;
+    VectorLst limits;
     limits.push_back(Vector2d(-0.5, 0.5));
 
     VectorSeq traj = gen_random_setpoints(4, n_steps, id_output, limits, 0.01);
@@ -34,18 +34,23 @@ int main()
     MatrixXd Q = MatrixXd::Zero(4, 4);
     MatrixXd R = MatrixXd::Zero(1, 1);
 
-    Q << 1.5,  0, 0, 0,
-          0 , 10, 0, 0,
-          0 ,  0, 0, 0,
-          0 ,  0, 0, 0;
+    Q << 1.5, 0, 0, 0,
+        0, 10, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0;
 
     R << 0.05;
 
     LQR<InvertedPendulum> lqr(&IP, Q, R);
 
-    IP.simulate(n_steps, lqr.get_policy(), traj);
-    
-    lqr.show_reference_traj();
+    uint32_t T_ini = 4;
+    uint32_t horizon = 20;
+
+    DeePC<InvertedPendulum> deePC(&IP, Q, R, T_ini, horizon,
+                                  SMStruct::Hankel, 
+                                  lqr.get_policy(),
+                                  limits, limits);
+
     IP.plot_output();
 
     return 0;

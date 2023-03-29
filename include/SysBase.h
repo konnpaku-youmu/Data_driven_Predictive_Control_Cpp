@@ -41,6 +41,18 @@ public:
 
     double get_Ts();
 
+    uint8_t get_nx();
+
+    uint8_t get_nu();
+
+    uint8_t get_ny();
+
+    VectorSeq get_state_seq(int32_t start, int32_t end);
+
+    VectorSeq get_input_seq(int32_t start, int32_t end);
+
+    VectorSeq get_output_seq(int32_t start, int32_t end);
+
     void plot_output();
 };
 

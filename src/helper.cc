@@ -37,7 +37,7 @@ VectorXd mulvar_noise_vec(VectorXd &mean, MatrixXd &cov)
 
 VectorSeq gen_random_setpoints(uint8_t n_outputs, uint32_t L,
                                std::vector<uint8_t> id_output,
-                               std::vector<Vector2d> limits,
+                               VectorLst limits,
                                double sw_prob)
 {
     VectorSeq sp;
@@ -105,5 +105,72 @@ void plot_vecseq(VectorSeq &vec_seq, double Ts,
             continue;
         plt::plot(t, y[i], kwargs);
     }
+    return;
+}
+
+MatrixXd hankelize(VectorSeq &vec_seq, uint32_t L)
+{
+
+    assert(L <= vec_seq.size());
+
+    int n_outputs = vec_seq[0].rows();
+    int n_steps = vec_seq.size();
+
+    MatrixXd H(n_outputs * L, n_steps - L + 1);
+
+    for (int i = 0; i < n_steps - L + 1; i++)
+    {
+        for (int j = 0; j < L; j++)
+        {
+            H.block(n_outputs * j, i, n_outputs, 1) = vec_seq[i + j];
+        }
+    }
+
+    return H;
+}
+
+void split_mat(const MatrixXd &mat, uint32_t split_pos,
+               casadi::Matrix<double> &upper,
+               casadi::Matrix<double> &lower)
+{
+    int n_rows = mat.rows();
+    int n_cols = mat.cols();
+
+    upper = casadi::DM::zeros(split_pos, n_cols);
+    lower = casadi::DM::zeros(n_rows - split_pos, n_cols);
+
+    for (int i = 0; i < n_rows; i++)
+    {
+        for (int j = 0; j < n_cols; j++)
+        {
+            if (i < split_pos)
+            {
+                upper(i, j) = mat(i, j);
+            }
+            else
+            {
+                lower(i - split_pos, j) = mat(i, j);
+            }
+        }
+    }
+
+    return;
+}
+
+void vecseq2MX(const VectorSeq &seq, casadi::MX &casadi_mat)
+{
+    int n_rows = seq[0].rows();
+    int n_cols = seq.size();
+
+    casadi_mat = casadi::MX::zeros(n_rows * n_cols, 1);
+
+    for (int i = 0; i < n_cols; i++)
+    {
+        for (int j = 0; j < n_rows; j++)
+        {
+            casadi_mat(i * n_rows + j, 0) = seq[i](j);
+        }
+    }
+
     return;
 }

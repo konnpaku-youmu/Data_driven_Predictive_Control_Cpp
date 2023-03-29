@@ -58,6 +58,54 @@ double System::get_Ts()
     return this->Ts;
 }
 
+uint8_t System::get_nx()
+{
+    return this->n_states;
+}
+
+uint8_t System::get_nu()
+{
+    return this->n_inputs;
+}
+
+uint8_t System::get_ny()
+{
+    return this->n_outputs;
+}
+
+VectorSeq System::get_state_seq(int32_t start = 1, int32_t end = -1)
+{
+    if (end == -1)
+        end = this->x.size();
+
+    if (start < 0)
+        start = this->x.size() + start;
+
+    return VectorSeq(this->x.begin() + start, this->x.begin() + end);
+}
+
+VectorSeq System::get_input_seq(int32_t start = 1, int32_t end = -1)
+{
+    if (end == -1)
+        end = this->u.size();
+
+    if (start < 0)
+        start = this->x.size() + start;
+
+    return VectorSeq(this->u.begin() + start, this->u.begin() + end);
+}
+
+VectorSeq System::get_output_seq(int32_t start = 1, int32_t end = -1)
+{
+    if (end == -1)
+        end = this->y.size();
+
+    if (start < 0)
+        start = this->x.size() + start;
+
+    return VectorSeq(this->y.begin() + start, this->y.begin() + end);
+}
+
 void System::plot_output()
 {
     std::vector<double> t, y;
