@@ -76,6 +76,35 @@ public:
     MatrixXd *getD() { return &D; }
 };
 
+class FlexJoint : public LinearSystem
+{
+private:
+    MatrixXd A = MatrixXd::Zero(2, 2);
+    MatrixXd B = MatrixXd::Zero(2, 1);
+    MatrixXd C = MatrixXd::Zero(1, 2);
+    MatrixXd D = MatrixXd::Zero(1, 1);
+
+    VectorXd noise_cov = VectorXd::Zero(1);
+
+    public:
+    FlexJoint(double Ts, bool isNoisy, VectorXd &x0)
+    {
+
+        this->_build_system_model(Ts, isNoisy, noise_cov);
+        this->_set_init_states(x0);
+    }
+
+    VectorXd lb_output = VectorXd::Zero(2);
+    VectorXd ub_output = VectorXd::Zero(2);
+    VectorXd lb_input = VectorXd::Zero(1);
+    VectorXd ub_input = VectorXd::Zero(1);
+
+    MatrixXd *getA() { return &A; }
+    MatrixXd *getB() { return &B; }
+    MatrixXd *getC() { return &C; }
+    MatrixXd *getD() { return &D; }
+};
+
 class IPNonlinear : public NonlinearSystem
 {
     using NonlinearSystem::NonlinearSystem;

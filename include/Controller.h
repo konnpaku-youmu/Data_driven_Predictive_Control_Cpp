@@ -86,11 +86,13 @@ protected:
 
     casadi::MX loss, traj_constraint;
 
+    std::vector<double> lbx, ubx, lbu, ubu;
+
     casadi::Matrix<double> U_p, U_f, Y_p, Y_f; // Signal Matrix Blocks
 
     casadi::Function solver;
 
-    casadi::MXDict opti_vars, opti_params;
+    casadi::MXDict opti_vars, opti_params, problem, result;
 
     void _build_controller();
 
@@ -104,7 +106,8 @@ public:
     DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
           uint32_t T_ini, uint32_t horizon, 
           SMStruct sm_struct, const ControlLaw &init_policy,
-          VectorLst state_bounds, VectorLst input_bounds);
+          const std::vector<std::vector<double>> &state_bounds, 
+          const std::vector<std::vector<double>> &input_bounds);
 };
 
 #endif // CONTROLLER_H

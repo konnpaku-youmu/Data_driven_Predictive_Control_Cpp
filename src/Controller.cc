@@ -86,7 +86,8 @@ DeePC<T>::DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
                 uint32_t T_ini, uint32_t horizon,
                 SMStruct sm_struct,
                 const ControlLaw &init_policy,
-                VectorLst state_bounds, VectorLst input_bounds) : Controller<T>(model_ptr)
+                const std::vector<std::vector<double>> &state_bounds, 
+                const std::vector<std::vector<double>> &input_bounds) : Controller<T>(model_ptr)
 {
     this->Q = Q;
     this->R = R;
@@ -110,6 +111,33 @@ DeePC<T>::DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
     _build_controller();
     _set_constraints();
     _build_loss_func();
+
+    // vertcat all opti_vars
+    std::vector<casadi::MX> opti_vars_vec;
+    for (auto &var : this->opti_vars)
+    {
+        opti_vars_vec.push_back(var.second);
+    }
+    auto opti_vars_MX = casadi::MX::vertcat(opti_vars_vec);
+
+    std::vector<casadi::MX> opti_params_vec;
+    for (auto &param : this->opti_params)
+    {
+        opti_params_vec.push_back(param.second);
+    }
+    auto opti_params_MX = casadi::MX::vertcat(opti_params_vec);
+
+    problem["x"] = opti_vars_MX;
+    problem["f"] = loss;
+    problem["g"] = traj_constraint;
+    problem["p"] = opti_params_MX;
+
+    lbx = state_bounds[0];
+    ubx = state_bounds[1];
+    lbu = input_bounds[0];
+    ubu = input_bounds[1];
+
+    this->solver = casadi::nlpsol("solver", "ipopt", this->problem);
 }
 
 template <typename T>
@@ -212,7 +240,6 @@ void DeePC<T>::_build_loss_func()
     {
         // Add regularization terms
         int λs = 160;
-        
     }
 
     return;
@@ -227,7 +254,9 @@ VectorXd DeePC<T>::_policy(const VectorXd &xk, const VectorXd &rk)
 
     vecseq2MX(y_tail, opti_params.at("y_ini"));
     vecseq2MX(u_tail, opti_params.at("u_ini"));
-    opti_params.at("ref") = rk;
+    vec2MX(rk, opti_params.at("ref"));
+
+    // result = this->solver();
 
     return VectorXd::Zero(this->model->get_nu());
 }

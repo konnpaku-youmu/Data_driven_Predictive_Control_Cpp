@@ -46,10 +46,17 @@ int main()
     uint32_t T_ini = 4;
     uint32_t horizon = 20;
 
+    std::vector<double> lb_states, ub_states, lb_inputs, ub_inputs;
+    std::vector<std::vector<double>> state_bounds, input_bounds;
+    state_bounds.push_back(lb_states);
+    state_bounds.push_back(ub_states);
+    input_bounds.push_back(lb_inputs);
+    input_bounds.push_back(ub_inputs);
+
     DeePC<InvertedPendulum> deePC(&IP, Q, R, T_ini, horizon,
                                   SMStruct::Hankel, 
                                   lqr.get_policy(),
-                                  limits, limits);
+                                  state_bounds, input_bounds);
 
     IP.plot_output();
 

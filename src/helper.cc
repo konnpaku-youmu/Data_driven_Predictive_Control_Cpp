@@ -157,6 +157,20 @@ void split_mat(const MatrixXd &mat, uint32_t split_pos,
     return;
 }
 
+void vec2MX(const VectorXd &vec, casadi::MX &casadi_vec)
+{
+    int n_rows = vec.rows();
+
+    casadi_vec = casadi::MX::zeros(n_rows, 1);
+
+    for (int i = 0; i < n_rows; i++)
+    {
+        casadi_vec(i, 0) = vec(i);
+    }
+
+    return;
+}
+
 void vecseq2MX(const VectorSeq &seq, casadi::MX &casadi_mat)
 {
     int n_rows = seq[0].rows();

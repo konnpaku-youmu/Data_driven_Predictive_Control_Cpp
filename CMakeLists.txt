@@ -12,6 +12,9 @@ find_package(Boost 1.8 REQUIRED)
 find_package(OpenMP QUIET)
 find_package(casadi REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+# find_package(Ipopt REQUIRED)
+
+link_directories(${IPOPT_LIBRARY_DIRS})
 
 if(CUDA_FOUND)
   add_compile_definitions(WITH_CUDA)
