@@ -31,6 +31,21 @@ void Controller<T>::show_reference_traj()
 }
 
 template <typename T>
+RandInput<T>::RandInput(T *model_ptr, double cov) : Controller<T>(model_ptr)
+{
+    this->input_cov = cov;
+}
+
+template <typename T>
+VectorXd RandInput<T>::_policy(const VectorXd &xk, const VectorXd &rk)
+{
+    int nu = this->model->get_nu();
+    VectorXd mean = VectorXd::Zero(nu);
+    MatrixXd cov = VectorXd::Identity(nu, nu) * input_cov;
+    return mulvar_noise_vec(mean, cov);
+}
+
+template <typename T>
 LQR<T>::LQR(T *model_ptr, const MatrixXd &Q, const MatrixXd &R) : Controller<T>(model_ptr)
 {
     this->Q = Q;
@@ -86,11 +101,11 @@ DeePC<T>::DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
                 uint32_t T_ini, uint32_t horizon,
                 SMStruct sm_struct,
                 const ControlLaw &init_policy,
-                const std::vector<std::vector<double>> &state_bounds, 
+                const std::vector<std::vector<double>> &state_bounds,
                 const std::vector<std::vector<double>> &input_bounds) : Controller<T>(model_ptr)
 {
-    this->Q = Q;
-    this->R = R;
+    eigmat2DM(Q, this->Q);
+    eigmat2DM(R, this->R);
 
     this->T_ini = T_ini;
     this->horizon = horizon;
@@ -137,7 +152,14 @@ DeePC<T>::DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
     lbu = input_bounds[0];
     ubu = input_bounds[1];
 
-    this->solver = casadi::nlpsol("solver", "ipopt", this->problem);
+    casadi::Dict opts;
+    opts["ipopt.tol"] = 1e-5;
+    opts["ipopt.max_iter"] = 100;
+    opts["print_time"] = true;
+    opts["expand"] = true;
+
+    this->solver = new casadi::Function(casadi::nlpsol("solver", "ipopt",
+                                                       this->problem, opts));
 }
 
 template <typename T>
@@ -232,8 +254,8 @@ void DeePC<T>::_build_loss_func()
         yk = opti_vars.at("y")(k) - opti_params.at("ref");
         uk = opti_vars.at("u")(k);
 
-        loss += (1 / 2) * casadi::MX::mtimes({yk.T(), yk}) +
-                (1 / 2) * casadi::MX::mtimes({uk.T(), uk});
+        loss += (1 / 2) * casadi::MX::sum1(casadi::MX::mtimes({yk.T(), Q, yk})) +
+                (1 / 2) * casadi::MX::sum1(casadi::MX::mtimes({uk.T(), R, uk}));
     }
 
     if (ocp_type == OCPType::REGULARIZED)
@@ -252,17 +274,58 @@ VectorXd DeePC<T>::_policy(const VectorXd &xk, const VectorXd &rk)
     VectorSeq y_tail = this->model->get_output_seq(-T_ini, -1);
     VectorSeq u_tail = this->model->get_input_seq(-T_ini, -1);
 
-    vecseq2MX(y_tail, opti_params.at("y_ini"));
     vecseq2MX(u_tail, opti_params.at("u_ini"));
+    vecseq2MX(y_tail, opti_params.at("y_ini"));
     vec2MX(rk, opti_params.at("ref"));
 
-    // result = this->solver();
+    this->ref_traj.push_back(rk);
 
-    return VectorXd::Zero(this->model->get_nu());
+    casadi::MXDict arg;
+
+    arg["lbg"] = 0;
+    arg["ubg"] = 0;
+    arg["p"] = casadi::MX::vertcat({opti_params.at("u_ini"),
+                                    opti_params.at("y_ini"),
+                                    opti_params.at("ref")});
+
+    this->solver->call(arg, result);
+
+    casadi::MX opt_g = _unpack_opti_g();
+    casadi::MX opt_u = casadi::MX::mtimes(this->U_f, opt_g);
+
+    VectorXd u = VectorXd::Zero(horizon);
+    MX2vec(opt_u, u);
+
+    std::cout << u << std::endl;
+
+    int nu = this->model->get_nu();
+    return u.head(nu);
+}
+
+template <typename T>
+casadi::MX DeePC<T>::_unpack_opti_g()
+{
+    int L = this->U_f.size2();
+
+    casadi::MX opti = result.at("x");
+    casadi::MX g = casadi::MX::zeros(L, 1);
+
+    // last L elements are g
+    for (int i = 0; i < L; i++)
+    {
+        g(i) = opti(opti.size1() - L + i);
+    }
+
+    return g;
 }
 
 // declare all the template classes
 template class Controller<InvertedPendulum>;
+template class Controller<FlexJoint>;
+
 template class LQR<InvertedPendulum>;
 template class MPC<InvertedPendulum>;
 template class DeePC<InvertedPendulum>;
+
+template class RandInput<FlexJoint>;
+template class DeePC<FlexJoint>;

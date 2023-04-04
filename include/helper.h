@@ -43,6 +43,10 @@ void split_mat(const MatrixXd &mat, uint32_t split_pos,
 
 void vec2MX(const VectorXd &vec, casadi::MX &casadi_vec);
 
+void MX2vec(const casadi::MX &casadi_vec, VectorXd &vec);
+
 void vecseq2MX(const VectorSeq &seq, casadi::MX &casadi_mat);
+
+void eigmat2DM(const MatrixXd &mat, casadi::DM &casadi_mat);
 
 #endif

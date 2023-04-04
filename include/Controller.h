@@ -41,6 +41,18 @@ public:
 };
 
 template <typename T>
+class RandInput : public Controller<T>
+{
+protected:
+    double input_cov;
+
+    VectorXd _policy(const VectorXd &xk, const VectorXd &rk);
+
+public:
+    RandInput(T *model_ptr, double cov);
+};
+
+template <typename T>
 class LQR : public Controller<T>
 {
 protected:
@@ -73,8 +85,11 @@ public:
 template <typename T>
 class DeePC : public Controller<T>
 {
+private:
+    casadi::MX _unpack_opti_g();
+
 protected:
-    MatrixXd Q, R;
+    casadi::DM Q, R;
 
     uint32_t T_ini, horizon;
 
@@ -90,7 +105,7 @@ protected:
 
     casadi::Matrix<double> U_p, U_f, Y_p, Y_f; // Signal Matrix Blocks
 
-    casadi::Function solver;
+    casadi::Function *solver;
 
     casadi::MXDict opti_vars, opti_params, problem, result;
 
@@ -104,9 +119,9 @@ protected:
 
 public:
     DeePC(T *model_ptr, const MatrixXd &Q, const MatrixXd &R,
-          uint32_t T_ini, uint32_t horizon, 
+          uint32_t T_ini, uint32_t horizon,
           SMStruct sm_struct, const ControlLaw &init_policy,
-          const std::vector<std::vector<double>> &state_bounds, 
+          const std::vector<std::vector<double>> &state_bounds,
           const std::vector<std::vector<double>> &input_bounds);
 };
 

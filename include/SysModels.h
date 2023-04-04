@@ -79,16 +79,46 @@ public:
 class FlexJoint : public LinearSystem
 {
 private:
-    MatrixXd A = MatrixXd::Zero(2, 2);
-    MatrixXd B = MatrixXd::Zero(2, 1);
-    MatrixXd C = MatrixXd::Zero(1, 2);
-    MatrixXd D = MatrixXd::Zero(1, 1);
+    MatrixXd A = MatrixXd::Zero(4, 4);
+    MatrixXd B = MatrixXd::Zero(4, 1);
+    MatrixXd C = MatrixXd::Zero(2, 4);
+    MatrixXd D = MatrixXd::Zero(2, 1);
 
     VectorXd noise_cov = VectorXd::Zero(1);
 
-    public:
+    double Rm = 2.6;
+    double Km = 0.00767;
+    double Kb = 0.00767;
+    double Kg = 70;
+    double Jl = 0.0059;
+    double Jh = 0.0021;
+    double Ks = 1.60956;
+
+    double a21 = Ks / Jh;
+    double a22 = -(Kg * Kg * Km * Kb) / (Jh * Rm);
+    double a31 = -(Jl + Jh) * Ks / (Jl * Jh);
+    double a32 = (Kg * Kg * Km * Kb) / (Jh * Rm);
+    double b2 = (Km * Kg) / (Jh * Rm);
+    double b3 = (-Km * Kg) / (Rm * Jh);
+
+public:
     FlexJoint(double Ts, bool isNoisy, VectorXd &x0)
     {
+        A << 0, 0, 1, 0,
+            0, 0, 0, 1,
+            0, a21, a22, 0,
+            0, a31, a32, 0;
+
+        B << 0,
+            0,
+            b2,
+            b3;
+
+        C << 1, 0, 0, 0,
+            0, 1, 0, 0;
+
+        D << 0,
+            0;
 
         this->_build_system_model(Ts, isNoisy, noise_cov);
         this->_set_init_states(x0);

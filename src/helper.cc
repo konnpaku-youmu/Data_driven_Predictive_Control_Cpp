@@ -171,6 +171,20 @@ void vec2MX(const VectorXd &vec, casadi::MX &casadi_vec)
     return;
 }
 
+void MX2vec(const casadi::MX &casadi_vec, VectorXd &vec)
+{
+    int n_rows = casadi_vec.rows();
+
+    vec = VectorXd::Zero(n_rows);
+
+    for (int i = 0; i < n_rows; i++)
+    {
+        vec(i) = casadi::MX::abs();
+    }
+
+    return;
+}
+
 void vecseq2MX(const VectorSeq &seq, casadi::MX &casadi_mat)
 {
     int n_rows = seq[0].rows();
@@ -183,6 +197,24 @@ void vecseq2MX(const VectorSeq &seq, casadi::MX &casadi_mat)
         for (int j = 0; j < n_rows; j++)
         {
             casadi_mat(i * n_rows + j, 0) = seq[i](j);
+        }
+    }
+
+    return;
+}
+
+void eigmat2DM(const MatrixXd &mat, casadi::DM &casadi_mat)
+{
+    int n_rows = mat.rows();
+    int n_cols = mat.cols();
+
+    casadi_mat = casadi::DM::zeros(n_rows, n_cols);
+
+    for (int i = 0; i < n_rows; i++)
+    {
+        for (int j = 0; j < n_cols; j++)
+        {
+            casadi_mat(i, j) = mat(i, j);
         }
     }
 

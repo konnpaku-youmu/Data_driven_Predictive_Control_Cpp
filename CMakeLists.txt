@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(dpc)
-enable_language(CUDA)
 add_compile_options(-std=c++20)
 
 set(WITH_GUI ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(CUDA)
+find_package(CUDA QUIET)
 find_package(casadi REQUIRED)
 find_package(Boost 1.8 REQUIRED)
 find_package(OpenMP QUIET)
@@ -17,6 +16,7 @@ find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 link_directories(${IPOPT_LIBRARY_DIRS})
 
 if(CUDA_FOUND)
+  enable_language(CUDA)
   add_compile_definitions(WITH_CUDA)
   set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -lcudart -l cufft -l cublas)
   find_library(CUDART_LIBRARY x11 cudart cufft 
@@ -36,9 +36,6 @@ else()
   set(PROJECT_LIBS 
       -lpthread
       -pthread
-      OpenMP::OpenMP_CXX
-      ${OpenCV_LIBS} 
-      GSL::gsl
   )
   message("-- CUDA Not Found, fallback to GSL")
 endif()
@@ -68,7 +65,7 @@ include_directories(
   include/ui
   thirdparty
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${CUDA_INCLUDE_DIRS}
+  # ${CUDA_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
